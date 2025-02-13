@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School~rooms</title>
+    <style>
+        body {
+            background-color: #1a1a1a; /* Darker background */
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .description {
+            max-width: 600px;
+            text-align: left;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px); /* Adjust based on number of rooms */
+            gap: 15px;
+        }
+        .room-container {
+            text-align: center;
+        }
+        .room-number {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+        .room {
+            width: 60px;
+            height: 60px;
+            border: 2px solid white;
+            border-radius: 10px; /* Rounded edges */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .room.green {
+            background-color: green;
+        }
+        .room.red {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>School~rooms</h1>
+    <div class="description">
+        <p>Hello! This website was made especially for Ben Gurion teachers to let you know which rooms are free or occupied.</p>
+        <p><strong>Instructions:</strong></p>
+        <p>All rooms are presented before you in this structure. If you enter a room, press on the cell that represents your room, and it will turn red, notifying all other users that this room is occupied. The room number will be displayed somewhere visible inside the room or on the door.</p>
+        <p>Once you leave the room and dismiss your class, please press on the cell that corresponds to your room number again, and it will turn back to green, notifying all users that the room is now free to use.</p>
+        <p>Good luck!</p>
+    </div>
+    <div class="room-grid" id="room-grid">
+        <!-- Rooms will be dynamically added here -->
+    </div>
+
+    <script>
+        const roomGrid = document.getElementById('room-grid');
+        let rooms = [];
+
+        // Fetch initial room statuses from the server
+        async function fetchRooms() {
+            const response = await fetch('http://127.0.0.1:5000/get_rooms');
+            rooms = await response.json();
+            renderRooms();
+        }
+
+        // Render rooms on the page
+        function renderRooms() {
+            roomGrid.innerHTML = '';
+            rooms.forEach((status, index) => {
+                const roomContainer = document.createElement('div');
+                roomContainer.classList.add('room-container');
+
+                const roomNumber = document.createElement('div');
+                roomNumber.classList.add('room-number');
+                roomNumber.textContent = `Room ${index + 1}`;
+
+                const room = document.createElement('div');
+                room.classList.add('room', status);
+                room.addEventListener('click', () => toggleRoom(index));
+
+                roomContainer.appendChild(roomNumber);
+                roomContainer.appendChild(room);
+                roomGrid.appendChild(roomContainer);
+            });
+        }
+
+        // Toggle room status
+        async function toggleRoom(index) {
+            const newStatus = rooms[index] === 'green' ? 'red' : 'green';
+            await fetch('http://127.0.0.1:5000/update_room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index, status: newStatus }),
+            });
+            fetchRooms(); // Refresh room statuses
+        }
+
+        // Initialize
+        fetchRooms();
+    </script>
+</body>
+</html>
